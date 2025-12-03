@@ -1,60 +1,67 @@
 using Cysharp.Threading.Tasks;
 using OutGame.StateMachine;
-using OutGame.MVP.Settings;
+using OutGame.Infrastructure.Views;
+using OutGame.Presentation.Controllers;
+using OutGame.Presentation.Presenters;
+using OutGame.Domain.Repositories;
 using UnityEngine.AddressableAssets;
+using Zenject;
 
 namespace OutGame.States
 {
     /// <summary>
     /// 設定画面のステート
+    /// クリーンアーキテクチャに基づいた実装
     /// </summary>
     public class SettingsState : BaseState
     {
-        private readonly StateMachine<OutGameStateKey> _stateMachine;
-        private readonly OutGameStateKey _returnStateKey;
-        private SettingsPresenter _presenter;
+        private readonly SettingsController controller;
+        private readonly VolumePresenter volumePresenter;
+        private readonly IAudioSettingsRepository audioSettingsRepository;
+        private SettingsView view;
 
-        public SettingsState(StateMachine<OutGameStateKey> stateMachine, OutGameStateKey returnStateKey)
+        [Inject]
+        public SettingsState(
+            SettingsController controller,
+            VolumePresenter volumePresenter,
+            IAudioSettingsRepository audioSettingsRepository)
         {
-            _stateMachine = stateMachine;
-            _returnStateKey = returnStateKey;
+            this.controller = controller;
+            this.volumePresenter = volumePresenter;
+            this.audioSettingsRepository = audioSettingsRepository;
         }
 
         public override async UniTask OnEnter()
         {
             // Addressablesから View をロード
             var viewObject = await Addressables.InstantiateAsync("SettingsView");
-            var view = viewObject.GetComponent<SettingsView>();
+            view = viewObject.GetComponent<SettingsView>();
 
-            // // Model を作成
-            var model = new SettingsModel();
+            // PresenterにViewを設定
+            volumePresenter.SetView(view);
 
-            // // Presenter を作成
-            _presenter = new SettingsPresenter(view, model);
-            await _presenter.Initialize();
+            // Controllerを初期化（ViewとUseCaseを接続）
+            controller.Initialize(view);
 
-            // // イベントをバインド
-            _presenter.OnBackRequested += OnBackRequested;
+            // 初期値を設定（Repositoryから読み込み）
+            var settings = audioSettingsRepository.Load();
+            view.SetBgmVolume(settings.BgmVolume);
+            view.SetSeVolume(settings.SeVolume);
 
             // View を表示
-            await _presenter.Show();
+            await view.Show();
         }
 
         public override async UniTask OnExit()
         {
-            if (_presenter != null)
+            controller?.Dispose();
+
+            if (view != null)
             {
-                _presenter.OnBackRequested -= OnBackRequested;
-
-                await _presenter.Hide();
-                _presenter.Dispose();
-                _presenter = null;
+                await view.Hide();
+                view.Dispose();
+                view = null;
             }
-        }
-
-        private void OnBackRequested()
-        {
-            _stateMachine.ChangeState(_returnStateKey).Forget();
         }
     }
 }

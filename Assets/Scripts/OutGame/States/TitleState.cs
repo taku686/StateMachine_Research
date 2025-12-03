@@ -1,65 +1,50 @@
 using Cysharp.Threading.Tasks;
 using OutGame.StateMachine;
-using OutGame.MVP.Title;
+using OutGame.Infrastructure.Views;
+using OutGame.Presentation.Controllers;
 using UnityEngine.AddressableAssets;
+using Zenject;
 
 namespace OutGame.States
 {
     /// <summary>
     /// タイトル画面のステート
+    /// クリーンアーキテクチャに基づいた実装
     /// </summary>
     public class TitleState : BaseState
     {
-        private readonly StateMachine<OutGameStateKey> _stateMachine;
-        private TitlePresenter _presenter;
+        private readonly TitleController controller;
+        private TitleView view;
 
-        public TitleState(StateMachine<OutGameStateKey> stateMachine)
+        [Inject]
+        public TitleState(TitleController controller)
         {
-            _stateMachine = stateMachine;
+            this.controller = controller;
         }
 
         public override async UniTask OnEnter()
         {
-            // // Addressablesから View をロード
+            // Addressablesから View をロード
             var viewObject = await Addressables.InstantiateAsync("TitleView");
-            var view = viewObject.GetComponent<TitleView>();
+            view = viewObject.GetComponent<TitleView>();
 
-            // // Model を作成
-            var model = new TitleModel();
+            // Controllerを初期化（ViewとUseCaseを接続）
+            controller.Initialize(view);
 
-            // // Presenter を作成
-            _presenter = new TitlePresenter(view, model);
-            await _presenter.Initialize();
-
-            // // イベントをバインド
-            _presenter.OnStartRequested += OnStartRequested;
-            _presenter.OnSettingsRequested += OnSettingsRequested;
-
-            // // View を表示
-            await _presenter.Show();
+            // View を表示
+            await view.Show();
         }
 
         public override async UniTask OnExit()
         {
-            if (_presenter != null)
+            controller?.Dispose();
+
+            if (view != null)
             {
-                _presenter.OnStartRequested -= OnStartRequested;
-                _presenter.OnSettingsRequested -= OnSettingsRequested;
-
-                await _presenter.Hide();
-                _presenter.Dispose();
-                _presenter = null;
+                await view.Hide();
+                view.Dispose();
+                view = null;
             }
-        }
-
-        private void OnStartRequested()
-        {
-            _stateMachine.ChangeState(OutGameStateKey.Home).Forget();
-        }
-
-        private void OnSettingsRequested()
-        {
-            _stateMachine.ChangeState(OutGameStateKey.Settings).Forget();
         }
     }
 }

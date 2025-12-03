@@ -1,75 +1,60 @@
 using Cysharp.Threading.Tasks;
 using OutGame.StateMachine;
-using OutGame.MVP.Home;
-using UnityEngine;
+using OutGame.Infrastructure.Views;
+using OutGame.Presentation.Controllers;
+using OutGame.Domain.Repositories;
 using UnityEngine.AddressableAssets;
+using Zenject;
 
 namespace OutGame.States
 {
     /// <summary>
     /// ホーム画面のステート
+    /// クリーンアーキテクチャに基づいた実装
     /// </summary>
     public class HomeState : BaseState
     {
-        private readonly StateMachine<OutGameStateKey> _stateMachine;
-        private HomePresenter _presenter;
+        private readonly HomeController controller;
+        private readonly IUserProfileRepository userProfileRepository;
+        private HomeView view;
 
-        public HomeState(StateMachine<OutGameStateKey> stateMachine)
+        [Inject]
+        public HomeState(
+            HomeController controller,
+            IUserProfileRepository userProfileRepository)
         {
-            _stateMachine = stateMachine;
+            this.controller = controller;
+            this.userProfileRepository = userProfileRepository;
         }
 
         public override async UniTask OnEnter()
         {
             // Addressablesから View をロード
             var viewObject = await Addressables.InstantiateAsync("HomeView");
-            var view = viewObject.GetComponent<HomeView>();
+            view = viewObject.GetComponent<HomeView>();
 
-            // Model を作成
-            var model = new HomeModel();
+            // Controllerを初期化（ViewとUseCaseを接続）
+            controller.Initialize(view);
 
-            // Presenter を作成
-            _presenter = new HomePresenter(view, model);
-            await _presenter.Initialize();
-
-            // イベントをバインド
-            _presenter.OnQuestRequested += OnQuestRequested;
-            _presenter.OnShopRequested += OnShopRequested;
-            _presenter.OnSettingsRequested += OnSettingsRequested;
+            // TODO: ユーザープロフィールを読み込んで表示
+            // var userProfile = userProfileRepository.Load();
+            // view.SetPlayerLevel(userProfile.Level);
+            // view.SetPlayerGold(userProfile.Gold);
 
             // View を表示
-            await _presenter.Show();
+            await view.Show();
         }
 
         public override async UniTask OnExit()
         {
-            if (_presenter != null)
+            controller?.Dispose();
+
+            if (view != null)
             {
-                _presenter.OnQuestRequested -= OnQuestRequested;
-                _presenter.OnShopRequested -= OnShopRequested;
-                _presenter.OnSettingsRequested -= OnSettingsRequested;
-
-                await _presenter.Hide();
-                _presenter.Dispose();
-                _presenter = null;
+                await view.Hide();
+                view.Dispose();
+                view = null;
             }
-        }
-
-        private void OnQuestRequested()
-        {
-            Debug.Log("Quest requested");
-            // TODO: クエスト画面への遷移
-        }
-
-        private void OnShopRequested()
-        {
-            Debug.Log("Shop requested");
-            // TODO: ショップ画面への遷移
-        }
-
-        private void OnSettingsRequested()
-        {
-            _stateMachine.ChangeState(OutGameStateKey.Settings).Forget();
         }
     }
 }
