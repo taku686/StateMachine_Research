@@ -34,7 +34,7 @@ namespace OutGame.States
         public override async UniTask OnEnter()
         {
             // Addressablesから View をロード
-            var viewObject = await Addressables.InstantiateAsync("SettingsView");
+            var viewObject = await Addressables.InstantiateAsync(nameof(SettingsView));
             view = viewObject.GetComponent<SettingsView>();
 
             // PresenterにViewを設定

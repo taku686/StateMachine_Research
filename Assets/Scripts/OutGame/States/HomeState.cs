@@ -30,7 +30,7 @@ namespace OutGame.States
         public override async UniTask OnEnter()
         {
             // Addressablesから View をロード
-            var viewObject = await Addressables.InstantiateAsync("HomeView");
+            var viewObject = await Addressables.InstantiateAsync(nameof(HomeView));
             view = viewObject.GetComponent<HomeView>();
 
             // Controllerを初期化（ViewとUseCaseを接続）

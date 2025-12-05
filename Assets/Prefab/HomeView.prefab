@@ -11903,6 +11903,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6437300138811135580}
+  - component: {fileID: -3422415957364817593}
   m_Layer: 5
   m_Name: HomeView
   m_TagString: Untagged
@@ -11930,6 +11931,23 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &-3422415957364817593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4819013761275948432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 135eba5e0aea1d14683567c1142425ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _canvasGroup: {fileID: 0}
+  _fadeDuration: 0.3
+  _questButton: {fileID: 8360713385073260708}
+  _shopButton: {fileID: 7965082578080194371}
+  _settingsButton: {fileID: 4733314481192860686}
 --- !u!1 &4835143292910626802
 GameObject:
   m_ObjectHideFlags: 0

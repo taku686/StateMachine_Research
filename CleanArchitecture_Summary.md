@@ -11,8 +11,26 @@
 ### 最も重要なポイント
 クリーンアーキテクチャを理解する上で最も重要なのは、**処理の流れ**です。
 
+**基本の流れ**:
 ```
 Controller → Interactor → Presenter
+```
+
+**StateMachineパターンとの統合**:
+```
+State (画面遷移管理)
+  ↓
+Controller (入力の窓口)
+  ↓
+Interactor (UseCase実装)
+  ↓
+StateMachine (画面遷移実行)
+  ↓
+State (新しい画面のライフサイクル)
+  ↓
+Presenter (出力の窓口)
+  ↓
+View (UI表示)
 ```
 
 この単純な流れが、クリーンアーキテクチャの本質を表しています。
@@ -193,6 +211,249 @@ public class PlayerView : MonoBehaviour
 
 ---
 
+## StateMachine（ステートマシーンパターン）
+
+### 役割
+- 画面遷移の管理
+- ステートのライフサイクル管理（OnEnter, OnExit, OnUpdate）
+- 画面遷移履歴の管理（戻るボタン対応）
+- ルートステートの概念（履歴をクリアする基準画面）
+
+### 構造
+
+#### 1. StateMachine<TStateKey>（ステートマシーン本体）
+
+**役割**:
+- ジェネリックなステートマシーン実装
+- 履歴管理機能付き
+- ルートステートの概念で履歴をクリア
+
+**主要メソッド**:
+- `RegisterState()`: ステートを登録
+- `ChangeState()`: ステートを変更（履歴に追加）
+- `GoBack()`: 前のステートに戻る
+- `Update()`: 現在のステートの更新処理を実行
+
+**例**:
+
+```csharp
+public class StateMachine<TStateKey> where TStateKey : Enum
+{
+    private readonly Dictionary<TStateKey, IState> _states = new();
+    private readonly Stack<TStateKey> _stateHistory = new();
+    private readonly HashSet<TStateKey> _rootStates = new();
+    private IState _currentState;
+    private TStateKey _currentStateKey;
+
+    public TStateKey CurrentStateKey => _currentStateKey;
+    public bool CanGoBack => _stateHistory.Count > 0;
+
+    // ステートを登録（isRootState: 履歴をクリアする基準画面）
+    public void RegisterState(TStateKey key, IState state, bool isRootState = false)
+    {
+        _states[key] = state;
+        if (isRootState)
+        {
+            _rootStates.Add(key);
+        }
+    }
+
+    // ステートを変更（履歴に追加）
+    public async UniTask ChangeState(TStateKey newStateKey, bool addToHistory = true)
+    {
+        // 現在のステートから退出
+        if (_currentState != null)
+        {
+            if (addToHistory && !_rootStates.Contains(_currentStateKey))
+            {
+                _stateHistory.Push(_currentStateKey);
+            }
+            await _currentState.OnExit();
+        }
+
+        // ルートステートに遷移する場合は履歴をクリア
+        if (_rootStates.Contains(newStateKey))
+        {
+            _stateHistory.Clear();
+        }
+
+        // 新しいステートに入る
+        _currentState = _states[newStateKey];
+        _currentStateKey = newStateKey;
+        await _currentState.OnEnter();
+    }
+
+    // 前のステートに戻る
+    public async UniTask GoBack()
+    {
+        if (!CanGoBack) return;
+        var previousStateKey = _stateHistory.Pop();
+        await ChangeState(previousStateKey, addToHistory: false);
+    }
+
+    // 現在のステートの更新処理を実行
+    public void Update()
+    {
+        _currentState?.OnUpdate();
+    }
+}
+```
+
+#### 2. IState（ステートのインターフェース）
+
+**役割**:
+- ステートの基本インターフェース
+- ライフサイクルメソッドを定義
+
+```csharp
+public interface IState
+{
+    UniTask OnEnter();   // ステートに入る時の処理
+    UniTask OnExit();    // ステートから出る時の処理
+    void OnUpdate();     // ステートの更新処理
+}
+```
+
+#### 3. BaseState（ステートの基底クラス）
+
+**役割**:
+- IStateを実装した抽象クラス
+- デフォルト実装を提供
+
+```csharp
+public abstract class BaseState : IState
+{
+    public virtual async UniTask OnEnter() => await UniTask.CompletedTask;
+    public virtual async UniTask OnExit() => await UniTask.CompletedTask;
+    public virtual void OnUpdate() { }
+}
+```
+
+#### 4. 具体的なState実装（例: TitleState）
+
+**役割**:
+- 各画面のステート実装
+- Viewのロード、Controllerの初期化、画面表示を管理
+
+**例**:
+
+```csharp
+public class TitleState : BaseState
+{
+    private readonly TitleController controller;
+    private TitleView view;
+
+    [Inject]
+    public TitleState(TitleController controller)
+    {
+        this.controller = controller;
+    }
+
+    public override async UniTask OnEnter()
+    {
+        // Addressablesから View をロード
+        var viewObject = await Addressables.InstantiateAsync(nameof(TitleView));
+        view = viewObject.GetComponent<TitleView>();
+
+        // Controllerを初期化（ViewとUseCaseを接続）
+        controller.Initialize(view);
+
+        // View を表示
+        await view.Show();
+    }
+
+    public override async UniTask OnExit()
+    {
+        controller?.Dispose();
+
+        if (view != null)
+        {
+            await view.Hide();
+            view.Dispose();
+            view = null;
+        }
+    }
+}
+```
+
+#### 5. OutGameManager（ステートマシーンの管理）
+
+**役割**:
+- ステートマシーンの初期化と管理
+- 各ステートの登録
+- ステートマシーンの更新処理
+
+**例**:
+
+```csharp
+public class OutGameManager : MonoBehaviour
+{
+    private StateMachine<OutGameStateKey> _stateMachine;
+    private TitleState _titleState;
+    private HomeState _homeState;
+    private SettingsState _settingsState;
+
+    [Inject]
+    public void Construct(
+        StateMachine<OutGameStateKey> stateMachine,
+        TitleState titleState,
+        HomeState homeState,
+        SettingsState settingsState)
+    {
+        _stateMachine = stateMachine;
+        _titleState = titleState;
+        _homeState = homeState;
+        _settingsState = settingsState;
+
+        InitializeStateMachine();
+    }
+
+    private void Start()
+    {
+        // 初期ステートをタイトルに設定
+        _stateMachine.ChangeState(OutGameStateKey.Title).Forget();
+    }
+
+    private void Update()
+    {
+        _stateMachine?.Update();
+    }
+
+    private void InitializeStateMachine()
+    {
+        // 各ステートを登録
+        // isRootState = true: 履歴をクリアする基準画面（Title, Home）
+        _stateMachine.RegisterState(OutGameStateKey.Title, _titleState, isRootState: true);
+        _stateMachine.RegisterState(OutGameStateKey.Home, _homeState, isRootState: true);
+        _stateMachine.RegisterState(OutGameStateKey.Settings, _settingsState);
+    }
+}
+```
+
+### StateMachineとクリーンアーキテクチャの統合
+
+**処理の流れ**:
+```
+State (画面遷移管理)
+  ↓
+Controller (入力の窓口)
+  ↓
+Interactor (UseCase実装)
+  ↓
+Presenter (出力の窓口)
+  ↓
+View (UI表示)
+```
+
+**ポイント**:
+- Stateは画面遷移のライフサイクルを管理
+- State内でViewをロードし、Controllerを初期化
+- ControllerはUseCase（Interactor）を呼び出して画面遷移を実行
+- UseCaseはStateMachineを使って画面遷移を実行
+- 画面遷移履歴を管理することで、戻るボタンに対応
+
+---
+
 ## InputPort と OutputPort（インターフェース）
 
 ### 目的
@@ -258,28 +519,53 @@ Assets/
 │   │   ├── UseCases/
 │   │   │   ├── PickUpItemInteractor.cs
 │   │   │   ├── MovePlayerInteractor.cs
-│   │   │   └── AttackEnemyInteractor.cs
+│   │   │   ├── AttackEnemyInteractor.cs
+│   │   │   ├── NavigateToHomeInteractor.cs
+│   │   │   └── OpenSettingsInteractor.cs
 │   │   └── Ports/
 │   │       ├── Input/
 │   │       │   ├── IPickUpItemInputPort.cs
-│   │       │   └── IMovePlayerInputPort.cs
+│   │       │   ├── IMovePlayerInputPort.cs
+│   │       │   ├── INavigateToHomeInputPort.cs
+│   │       │   └── IOpenSettingsInputPort.cs
 │   │       └── Output/
 │   │           ├── IDialogOutputPort.cs
-│   │           └── IToastOutputPort.cs
+│   │           ├── IToastOutputPort.cs
+│   │           └── INavigationOutputPort.cs
 │   │
 │   ├── Presentation/        # InterfaceAdapter層
 │   │   ├── Controllers/
 │   │   │   ├── PlayerController.cs
-│   │   │   └── ItemController.cs
+│   │   │   ├── ItemController.cs
+│   │   │   ├── TitleController.cs
+│   │   │   ├── HomeController.cs
+│   │   │   └── SettingsController.cs
 │   │   └── Presenters/
 │   │       ├── DialogPresenter.cs
-│   │       └── ToastPresenter.cs
+│   │       ├── ToastPresenter.cs
+│   │       └── NavigationPresenter.cs
+│   │
+│   ├── StateMachine/        # ステートマシーン基盤
+│   │   ├── IState.cs
+│   │   ├── BaseState.cs
+│   │   └── StateMachine.cs
+│   │
+│   ├── States/              # 各画面のステート実装
+│   │   ├── TitleState.cs
+│   │   ├── HomeState.cs
+│   │   └── SettingsState.cs
+│   │
+│   ├── OutGameManager.cs    # アウトゲーム全体の管理
+│   ├── OutGameStateKey.cs   # ステート種類の定義（Enum）
 │   │
 │   └── Infrastructure/      # FrameworkAndDriver層
 │       ├── Views/
 │       │   ├── PlayerView.cs
 │       │   ├── DialogView.cs
-│       │   └── ToastView.cs
+│       │   ├── ToastView.cs
+│       │   ├── TitleView.cs
+│       │   ├── HomeView.cs
+│       │   └── SettingsView.cs
 │       └── Repositories/
 │           └── PlayerRepositoryImpl.cs
 ```
@@ -342,6 +628,14 @@ Assets/
 - 例: ControllerとViewを統合する
 - ただし、将来の拡張性は考慮する
 
+### 5. StateMachineの設計
+- Stateは画面遷移のライフサイクル管理に専念する
+- Viewのロードと破棄はStateで管理
+- Controllerの初期化と破棄もStateで管理
+- 画面遷移のロジックはUseCase（Interactor）に集約
+- ルートステートの概念を活用して履歴管理を適切に行う
+- StateMachineはZenjectでシングルトンとして管理
+
 ---
 
 ## まとめ
@@ -351,4 +645,15 @@ Assets/
 この2つを理解し、各層の責務を明確にすることで、変更に強く、テストしやすい、保守性の高いコードベースを実現できます。
 
 Unityゲーム開発においては、DIコンテナと組み合わせることで、より効果的にクリーンアーキテクチャを適用できます。
+
+### StateMachineパターンとの統合
+
+StateMachineパターンを組み合わせることで、画面遷移の管理がより明確になります：
+
+- **State**: 画面遷移のライフサイクルを管理（Viewのロード、Controllerの初期化）
+- **StateMachine**: 画面遷移の実行と履歴管理
+- **Controller → Interactor**: 画面遷移のUseCaseを実行
+- **Interactor → StateMachine**: 実際の画面遷移を実行
+
+この統合により、画面遷移のロジックがUseCase層に集約され、クリーンアーキテクチャの原則を保ちながら、画面遷移を管理できます。
 

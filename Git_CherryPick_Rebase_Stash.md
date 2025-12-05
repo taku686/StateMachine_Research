@@ -26,10 +26,51 @@ git stash pop
   4. `git checkout feature` に戻る
   5. `git stash pop` で変更を復元
 
+### `git stash pop` と `git stash apply` の違い
+
+**重要な違い**：
+- **`git stash pop`** - 変更を適用して、**stashから削除する**
+- **`git stash apply`** - 変更を適用するが、**stashには残す**
+
+#### 具体例で理解する
+
+```bash
+# 複数のstashがある場合
+git stash list
+# stash@{0}: WIP on feature: 最新の変更
+# stash@{1}: WIP on feature: 2つ目の変更
+# stash@{2}: WIP on feature: 3つ目の変更
+
+# applyの場合：適用するがstashに残る
+git stash apply stash@{0}
+# → 変更が適用される
+# → stash@{0}はまだ残っている
+
+# popの場合：適用してstashから削除
+git stash pop stash@{0}
+# → 変更が適用される
+# → stash@{0}は削除される
+# → 次のstashがstash@{0}になる（stash@{1}がstash@{0}に繰り上がる）
+```
+
+#### 使い分けの目安
+
+- **`git stash pop`** を使う場合：
+  - 一度だけ適用すれば良い時
+  - 通常の使い方（適用して削除）
+  - 例：作業を一時中断して、戻ってきた時に復元
+
+- **`git stash apply`** を使う場合：
+  - 同じ変更を複数のブランチに適用したい時
+  - 適用後にstashを残しておきたい時
+  - 例：同じ修正を`feature-A`と`feature-B`の両方に適用したい
+
 ### 便利なコマンド
 - `git stash list` - 保存した変更の一覧を表示
 - `git stash apply` - 最新の変更を適用（削除しない）
-- `git stash drop` - 最新の変更を削除
+- `git stash pop` - 最新の変更を適用して削除
+- `git stash drop` - 最新の変更を削除（適用しない）
+- `git stash clear` - すべてのstashを削除
 
 ---
 
