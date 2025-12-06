@@ -16,6 +16,17 @@ namespace OutGame.Infrastructure.Addressables
             public const string Settings = "SettingsView";
         }
 
+        /// <summary>
+        /// 遷移アニメーション用アセット
+        /// </summary>
+        public static class Transition
+        {
+            /// <summary>
+            /// ローディング＆フェード兼用View
+            /// </summary>
+            public const string LoadingView = "LoadingView";
+        }
+
         // 将来的な拡張用
         // public static class Prefabs { }
         // public static class Audio { }

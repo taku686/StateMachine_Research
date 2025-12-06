@@ -102,7 +102,8 @@ OutGame/
 │       │   └── BaseView.cs
 │       ├── TitleView.cs
 │       ├── HomeView.cs
-│       └── SettingsView.cs
+│       ├── SettingsView.cs
+│       └── LoadingView.cs         # ローディング＆フェード兼用
 │
 ├── Presentation/                   # プレゼンテーション層
 │   ├── Controllers/               # コントローラー
@@ -386,6 +387,12 @@ public static class AddressableAssetKey
         public const string Home = "HomeView";
         public const string Settings = "SettingsView";
     }
+
+    // 遷移アニメーション用アセット
+    public static class Transition
+    {
+        public const string LoadingView = "LoadingView"; // ローディング＆フェード兼用
+    }
 }
 ```
 
@@ -557,50 +564,102 @@ public interface IStateTransitionAnimator
 
 ### FadeTransitionAnimator
 
+Installer経由でLoadingViewファクトリーを注入（設計原則に準拠）
+
 ```csharp
-public class FadeTransitionAnimator : MonoBehaviour, IStateTransitionAnimator
+public class FadeTransitionAnimator : IStateTransitionAnimator, IDisposable
 {
-    [SerializeField] private CanvasGroup _fadeCanvasGroup;
-    [SerializeField] private GameObject _loadingPanel;
-    [SerializeField] private float _fadeDuration = 0.3f;
+    private readonly IViewFactory<LoadingView> _loadingViewFactory;
+    private readonly AddressableViewFactory<LoadingView> _addressableFactory;
+    private readonly float _fadeDuration;
+    private LoadingView _loadingView;
+
+    [Inject]
+    public FadeTransitionAnimator(
+        IViewFactory<LoadingView> loadingViewFactory,
+        AddressableViewFactory<LoadingView> addressableFactory,
+        [InjectOptional] float fadeDuration = 0.3f)
+    {
+        _loadingViewFactory = loadingViewFactory;
+        _addressableFactory = addressableFactory;
+        _fadeDuration = fadeDuration;
+    }
+
+    public async UniTask InitializeAsync()
+    {
+        await _addressableFactory.PreloadAsync();
+        _loadingView = await _loadingViewFactory.CreateAsync();
+    }
 
     public async UniTask PlayExitTransition()
     {
-        _fadeCanvasGroup.blocksRaycasts = true;
-        await _fadeCanvasGroup.DOFade(1f, _fadeDuration).ToUniTask();
+        _loadingView.HideLoadingElements();
+        await _loadingView.FadeIn(_fadeDuration);
     }
 
     public async UniTask PlayEnterTransition()
     {
-        await _fadeCanvasGroup.DOFade(0f, _fadeDuration).ToUniTask();
-        _fadeCanvasGroup.blocksRaycasts = false;
+        _loadingView.HideLoadingElements();
+        await _loadingView.FadeOut(_fadeDuration);
     }
 
     public async UniTask ShowLoading()
     {
-        _loadingPanel?.SetActive(true);
+        _loadingView?.ShowLoadingElements();
     }
 
     public async UniTask HideLoading()
     {
-        _loadingPanel?.SetActive(false);
+        _loadingView?.HideLoadingElements();
     }
+}
+```
+
+### LoadingView（フェード＆ローディング兼用）
+
+```csharp
+public class LoadingView : MonoBehaviour, IView
+{
+    [Header("フェード用")]
+    [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private Image _background;
+
+    [Header("ローディング用")]
+    [SerializeField] private GameObject _loadingElements;
+    [SerializeField] private Slider _progressBar;
+
+    [Header("スピナー（フレームアニメーション）")]
+    [SerializeField] private Image _spinnerImage;
+    [SerializeField] private Sprite[] _spinnerFrames; // 複数フレームの画像
+    [SerializeField] private float _frameRate = 12f;  // フレーム/秒
+
+    // フェードイン（画面を暗くする）
+    public async UniTask FadeIn(float duration);
+
+    // フェードアウト（画面を明るくする）
+    public async UniTask FadeOut(float duration);
+
+    // ローディング要素を表示（プログレスバー、フレームアニメーション開始）
+    public void ShowLoadingElements();
+
+    // ローディング要素を非表示
+    public void HideLoadingElements();
+
+    // プログレスバーの値を設定 (0.0 - 1.0)
+    public void SetProgress(float progress);
 }
 ```
 
 ### DI設定（Installer）
 
 ```csharp
-[SerializeField] private FadeTransitionAnimator _transitionAnimatorPrefab;
+// LoadingViewファクトリーをバインド
+BindViewFactory<LoadingView>(AddressableAssetKey.Transition.LoadingView);
 
-// オプショナル - プレハブが設定されている場合のみ
-if (_transitionAnimatorPrefab != null)
-{
-    Container.Bind<IStateTransitionAnimator>()
-        .To<FadeTransitionAnimator>()
-        .FromComponentInNewPrefab(_transitionAnimatorPrefab)
-        .AsSingle();
-}
+// FadeTransitionAnimator（LoadingViewファクトリーを注入）
+Container.Bind<IStateTransitionAnimator>()
+    .To<FadeTransitionAnimator>()
+    .AsSingle();
 ```
 
 ### StateMachineへの自動注入
@@ -651,19 +710,19 @@ public override void InstallBindings()
     Container.Bind<Canvas>().FromComponentInHierarchy().AsSingle();
     Container.Bind<IAddressableAssetProvider>().To<AddressableAssetProvider>().AsSingle();
 
-    // ===== 遷移アニメーション（オプショナル） =====
-    if (_transitionAnimatorPrefab != null)
-    {
-        Container.Bind<IStateTransitionAnimator>()
-            .To<FadeTransitionAnimator>()
-            .FromComponentInNewPrefab(_transitionAnimatorPrefab)
-            .AsSingle();
-    }
-
     // ===== Viewファクトリー =====
     BindViewFactory<TitleView>(AddressableAssetKey.Views.Title);
     BindViewFactory<HomeView>(AddressableAssetKey.Views.Home);
     BindViewFactory<SettingsView>(AddressableAssetKey.Views.Settings);
+
+    // ===== 遷移アニメーション（Addressablesから取得） =====
+    // LoadingViewファクトリーをバインド（フェード＆ローディング兼用）
+    BindViewFactory<LoadingView>(AddressableAssetKey.Transition.LoadingView);
+    
+    // FadeTransitionAnimator（LoadingViewファクトリーを注入）
+    Container.Bind<IStateTransitionAnimator>()
+        .To<FadeTransitionAnimator>()
+        .AsSingle();
 
     // ===== StateMachine =====
     Container.Bind<StateMachine<OutGameStateKey>>().AsSingle();
@@ -891,4 +950,5 @@ public void Construct(
 | 2025/12/06 | 遷移アニメーション機能を追加 |
 | 2025/12/06 | プリロード/クリーンアップ機能を追加 |
 | 2025/12/06 | Addressables管理システムを追加 |
+| 2025/12/06 | LoadingView追加（フェード＆ローディング兼用、Installer主導に変更） |
 

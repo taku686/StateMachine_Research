@@ -15,13 +15,18 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: 14eb3c0fc77304141b60db1723da1942
   m_SerializeEntries:
+  - m_GUID: 44daacce1e73e2b41ad2417a788ebf04
+    m_Address: LoadingView
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5e0fb1f0c03abe64ca77950ebe32c7aa
     m_Address: HomeView
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7a2acaba4c8e68649807fe4008e08ea1
-    m_Address: SettingView
+    m_Address: SettingsView
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
