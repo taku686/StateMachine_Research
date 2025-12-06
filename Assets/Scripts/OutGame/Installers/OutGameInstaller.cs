@@ -2,12 +2,16 @@ using UnityEngine;
 using Zenject;
 using OutGame.Domain.Repositories;
 using OutGame.Infrastructure.Repositories;
+using OutGame.Infrastructure.Factories;
+using OutGame.Infrastructure.Addressables;
+using OutGame.Infrastructure.Views;
 using OutGame.Application.Ports.Input;
 using OutGame.Application.Ports.Output;
 using OutGame.Application.UseCases;
 using OutGame.Presentation.Controllers;
 using OutGame.Presentation.Presenters;
 using OutGame.States;
+using OutGame.StateMachine;
 
 namespace OutGame.Installers
 {
@@ -18,11 +22,37 @@ namespace OutGame.Installers
     public class OutGameInstaller : MonoInstaller
     {
         [SerializeField] private OutGameManager _outGameManagerPrefab;
+        [SerializeField] private FadeTransitionAnimator _transitionAnimatorPrefab;
 
         public override void InstallBindings()
         {
             // ===== 基盤層 =====
-            // StateMachine（他のクラスに依存しない基盤）
+            // Canvas参照（シーン内のCanvasを取得）
+            Container.Bind<Canvas>()
+                .FromComponentInHierarchy()
+                .AsSingle();
+
+            // AddressableAssetProvider（Addressablesロードの一元管理）
+            Container.Bind<IAddressableAssetProvider>()
+                .To<AddressableAssetProvider>()
+                .AsSingle();
+
+            // ===== 遷移アニメーション =====
+            // TransitionAnimator（オプショナル - プレハブが設定されている場合のみ）
+            if (_transitionAnimatorPrefab != null)
+            {
+                Container.Bind<IStateTransitionAnimator>()
+                    .To<FadeTransitionAnimator>()
+                    .FromComponentInNewPrefab(_transitionAnimatorPrefab)
+                    .AsSingle();
+            }
+
+            // ===== Viewファクトリー（Installer主導のインスタンス化） =====
+            BindViewFactory<TitleView>(AddressableAssetKey.Views.Title);
+            BindViewFactory<HomeView>(AddressableAssetKey.Views.Home);
+            BindViewFactory<SettingsView>(AddressableAssetKey.Views.Settings);
+
+            // StateMachine（遷移アニメーターが自動注入される）
             Container.Bind<StateMachine.StateMachine<OutGameStateKey>>()
                 .AsSingle();
 
@@ -88,6 +118,31 @@ namespace OutGame.Installers
                 .FromComponentInNewPrefab(_outGameManagerPrefab)
                 .AsSingle()
                 .NonLazy();
+        }
+
+        /// <summary>
+        /// Viewファクトリーをバインド（Installer主導のインスタンス化）
+        /// AddressableAssetProviderを使用してプレハブをロードし、
+        /// ZenjectのDIコンテナでインスタンス化する
+        /// </summary>
+        /// <typeparam name="TView">Viewの型</typeparam>
+        /// <param name="assetKey">Addressablesアセットキー</param>
+        private void BindViewFactory<TView>(string assetKey) where TView : Component, IView
+        {
+            // AddressableViewFactoryを作成してバインド
+            Container.Bind<AddressableViewFactory<TView>>()
+                .AsSingle()
+                .WithArguments(assetKey);
+
+            // IFactory<TView>としてもバインド
+            Container.Bind<IFactory<TView>>()
+                .To<AddressableViewFactory<TView>>()
+                .FromResolve();
+
+            // IViewFactory<TView>をバインド
+            Container.Bind<IViewFactory<TView>>()
+                .To<ViewAsyncFactory<TView>>()
+                .AsSingle();
         }
     }
 }

@@ -56,6 +56,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "StateMachine_Research.sln",
+    "dotnet.defaultSolution": "StateMachine.sln",
     "git.ignoreLimitWarning": true
 }

@@ -18,11 +18,13 @@ namespace OutGame
         private SettingsState _settingsState;
 
         [Inject]
-        public void Construct(
+        public void Construct
+        (
             StateMachine<OutGameStateKey> stateMachine,
             TitleState titleState,
             HomeState homeState,
-            SettingsState settingsState)
+            SettingsState settingsState
+        )
         {
             _stateMachine = stateMachine;
             _titleState = titleState;
