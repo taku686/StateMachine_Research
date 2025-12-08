@@ -6,6 +6,15 @@
 
 ---
 
+## 📖 関連ドキュメント
+
+| ドキュメント | 内容 |
+|-------------|------|
+| [LIBRARIES.md](./LIBRARIES.md) | 使用ライブラリ＆外部ツール一覧 |
+| [OutGame/ARCHITECTURE.md](./OutGame/ARCHITECTURE.md) | OutGameアーキテクチャ設計 |
+
+---
+
 ## 📦 モジュール構成
 
 ```
