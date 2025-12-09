@@ -7,6 +7,7 @@ namespace InGame.States
 {
     using InGame.Application.Ports.Input;
     using InGame.Presentation.Controllers;
+    using InGame.Presentation.Presenters;
     using InGame.StateMachine;
 
     /// <summary>
@@ -15,19 +16,19 @@ namespace InGame.States
     /// </summary>
     public class BattleState : BaseInGameState
     {
-        private readonly PlayerViewController playerController;
+        private readonly BattlePresenter battlePresenter;
         private readonly List<EnemyViewController> enemyControllers;
         private readonly ICompleteBattleInputPort completeBattleInteractor;
         private readonly InGameStateMachine stateMachine;
 
         [Inject]
         public BattleState(
-            PlayerViewController playerController,
+            BattlePresenter battlePresenter,
             List<EnemyViewController> enemyControllers,
             ICompleteBattleInputPort completeBattleInteractor,
             InGameStateMachine stateMachine)
         {
-            this.playerController = playerController;
+            this.battlePresenter = battlePresenter;
             this.enemyControllers = enemyControllers;
             this.completeBattleInteractor = completeBattleInteractor;
             this.stateMachine = stateMachine;
@@ -42,6 +43,8 @@ namespace InGame.States
         public override void OnUpdate()
         {
             float deltaTime = Time.deltaTime;
+
+            var playerController = battlePresenter.PlayerController;
 
             // プレイヤー更新
             if (playerController != null)
@@ -80,6 +83,8 @@ namespace InGame.States
 
         private async UniTaskVoid CheckBattleEnd()
         {
+            var playerController = battlePresenter.PlayerController;
+
             // 全敵撃破チェック
             bool allEnemiesDefeated = true;
             foreach (var controller in enemyControllers)

@@ -79,6 +79,10 @@ namespace InGame.Installers
             Container.BindFactory<Enemy, EnemyView, HealthBarView, EnemyViewController, EnemyViewController.Factory>()
                 .FromNew();
 
+            // PlayerViewController Factory
+            Container.BindFactory<Player, PlayerView, HealthBarView, PlayerViewController, PlayerViewController.Factory>()
+                .FromNew();
+
             // ===== Use Cases =====
             Container.Bind<IStartBattleInputPort>()
                 .To<StartBattleInteractor>()
@@ -127,10 +131,6 @@ namespace InGame.Installers
             }
 
             // ===== Controllers =====
-            Container.Bind<PlayerViewController>()
-                .AsSingle()
-                .NonLazy();  // 即座に生成
-
             Container.Bind<BattleHUDController>()
                 .AsSingle();
 

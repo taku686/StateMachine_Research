@@ -8,6 +8,7 @@ namespace InGame.Presentation.Presenters
     using InGame.Application.Ports.Output;
     using InGame.Domain.Models;
     using InGame.Presentation.Controllers;
+    using InGame.Presentation.Views;
 
     /// <summary>
     /// バトルプレゼンター（IBattleOutputPort実装）
@@ -16,19 +17,27 @@ namespace InGame.Presentation.Presenters
     public class BattlePresenter : IBattleOutputPort, IRewardOutputPort
     {
         private readonly BattleHUDController hudController;
+        private readonly PlayerViewController.Factory playerControllerFactory;
+        private readonly HealthBarView.Factory healthBarFactory;
+        private readonly PlayerView playerView;
+        
         private PlayerViewController playerController;
         private List<EnemyViewController> enemyControllers = new List<EnemyViewController>();
 
         [Inject]
-        public BattlePresenter(BattleHUDController hudController)
+        public BattlePresenter(
+            BattleHUDController hudController,
+            PlayerViewController.Factory playerControllerFactory,
+            HealthBarView.Factory healthBarFactory,
+            PlayerView playerView)
         {
             this.hudController = hudController;
+            this.playerControllerFactory = playerControllerFactory;
+            this.healthBarFactory = healthBarFactory;
+            this.playerView = playerView;
         }
 
-        public void SetPlayerController(PlayerViewController controller)
-        {
-            this.playerController = controller;
-        }
+        public PlayerViewController PlayerController => playerController;
 
         public void SetEnemyControllers(List<EnemyViewController> controllers)
         {
@@ -38,6 +47,16 @@ namespace InGame.Presentation.Presenters
         public async UniTask OnBattleStarted(BattleContext context)
         {
             Debug.Log($"Battle Started: {context.StageId}");
+            
+            // PlayerViewController を Factory で生成
+            var playerHealthBar = healthBarFactory.Create();
+            playerController = playerControllerFactory.Create(
+                context.Player,      // 生成済みのPlayer
+                playerView,          // PlayerView
+                playerHealthBar      // HealthBarView
+            );
+            playerController.Initialize();
+            
             hudController.SetBattleContext(context);
             await UniTask.CompletedTask;
         }

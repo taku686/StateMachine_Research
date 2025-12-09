@@ -110,6 +110,13 @@ namespace InGame.Presentation.Controllers
         {
             playerView.PlayDeathAnimation();
         }
+
+        /// <summary>
+        /// Factory for creating PlayerViewController with Zenject
+        /// </summary>
+        public class Factory : PlaceholderFactory<Player, PlayerView, HealthBarView, PlayerViewController>
+        {
+        }
     }
 }
 

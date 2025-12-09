@@ -389,7 +389,7 @@ GameObject:
   - component: {fileID: 1386990320}
   - component: {fileID: 1386990319}
   m_Layer: 0
-  m_Name: InGameManager
+  m_Name: InGameInstaller
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
