@@ -60,9 +60,7 @@ namespace OutGame.Installers
                 .To<AudioSettingsRepositoryImpl>()
                 .AsSingle();
 
-            Container.Bind<IUserProfileRepository>()
-                .To<UserProfileRepositoryImpl>()
-                .AsSingle();
+            // 注: IUserProfileRepositoryはProjectContextでバインド済み（OutGameとInGameで共有）
 
             // ===== Presentation層（Presenter） =====
             // OutputPortの実装（Interactorから呼び出される）
@@ -96,6 +94,11 @@ namespace OutGame.Installers
 
             Container.Bind<INavigateBackInputPort>()
                 .To<NavigateBackInteractor>()
+                .AsSingle();
+
+            // バトル開始
+            Container.Bind<IStartBattleInputPort>()
+                .To<StartBattleInteractor>()
                 .AsSingle();
 
             // ===== Presentation層（Controller） =====

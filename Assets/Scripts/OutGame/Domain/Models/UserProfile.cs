@@ -9,6 +9,7 @@ namespace OutGame.Domain.Models
         public string UserName { get; private set; }
         public int Level { get; private set; }
         public int Gold { get; private set; }
+        public int CurrentStageId { get; private set; }
 
         public UserProfile(string userId, string userName, int level = 1, int gold = 1000)
         {
@@ -16,6 +17,7 @@ namespace OutGame.Domain.Models
             UserName = userName;
             Level = level;
             Gold = gold;
+            CurrentStageId = 1; // デフォルトはステージ1
         }
 
         /// <summary>
@@ -63,6 +65,17 @@ namespace OutGame.Domain.Models
 
             Gold -= amount;
             return true;
+        }
+
+        /// <summary>
+        /// 現在のステージIDを設定
+        /// </summary>
+        public void SetCurrentStageId(int stageId)
+        {
+            if (stageId > 0)
+            {
+                CurrentStageId = stageId;
+            }
         }
     }
 }

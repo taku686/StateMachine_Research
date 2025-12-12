@@ -6,6 +6,7 @@ namespace InGame.States
 {
     using InGame.Application.Ports.Input;
     using InGame.StateMachine;
+    using OutGame.Domain.Repositories;
 
     /// <summary>
     /// バトル準備State
@@ -15,22 +16,32 @@ namespace InGame.States
     {
         private readonly IStartBattleInputPort startBattleInteractor;
         private readonly InGameStateMachine stateMachine;
+        private readonly IUserProfileRepository userProfileRepository;
 
         [Inject]
         public BattlePreparationState(
             IStartBattleInputPort startBattleInteractor,
-            InGameStateMachine stateMachine)
+            InGameStateMachine stateMachine,
+            IUserProfileRepository userProfileRepository)
         {
             this.startBattleInteractor = startBattleInteractor;
             this.stateMachine = stateMachine;
+            this.userProfileRepository = userProfileRepository;
         }
 
         public override async UniTask OnEnter()
         {
-            Debug.Log("Battle Preparation Started");
+            Debug.Log("[BattlePreparationState] Battle Preparation Started");
+
+            // OutGameで設定されたステージIDを取得
+            var profile = userProfileRepository.Load();
+            var stageId = profile.CurrentStageId;
+
+            Debug.Log($"[BattlePreparationState] Loading stage: {stageId}");
 
             // バトル開始処理
-            await startBattleInteractor.Execute("Stage_1");
+            // TODO: ステージIDに応じた敵データをロード
+            await startBattleInteractor.Execute($"Stage_{stageId}");
 
             // 準備完了後、バトル開始
             await stateMachine.ChangeState(InGameStateKey.Battle);

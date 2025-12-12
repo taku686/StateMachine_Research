@@ -13,12 +13,16 @@ namespace OutGame.Presentation.Controllers
     public class HomeController
     {
         private readonly IOpenSettingsInputPort openSettingsUseCase;
+        private readonly IStartBattleInputPort startBattleUseCase;
         private readonly CompositeDisposable disposables = new();
 
         [Inject]
-        public HomeController(IOpenSettingsInputPort openSettingsUseCase)
+        public HomeController(
+            IOpenSettingsInputPort openSettingsUseCase,
+            IStartBattleInputPort startBattleUseCase)
         {
             this.openSettingsUseCase = openSettingsUseCase;
+            this.startBattleUseCase = startBattleUseCase;
         }
 
         /// <summary>
@@ -28,7 +32,7 @@ namespace OutGame.Presentation.Controllers
         {
             // クエストボタンイベントを購読
             view.OnQuestButtonClicked
-                .Subscribe(_ => OnQuestButtonClicked())
+                .SubscribeAwait(async (_, ct) => await OnQuestButtonClicked())
                 .AddTo(disposables);
 
             // ショップボタンイベントを購読
@@ -45,10 +49,12 @@ namespace OutGame.Presentation.Controllers
         /// <summary>
         /// クエストボタンが押されたときの処理
         /// </summary>
-        private void OnQuestButtonClicked()
+        private async Cysharp.Threading.Tasks.UniTask OnQuestButtonClicked()
         {
-            // TODO: クエスト画面への遷移UseCaseを実装
-            Debug.Log("Quest button clicked");
+            // バトル開始UseCase呼び出し
+            // TODO: 将来的にはステージ選択UIを実装
+            int selectedStageId = 1; // 仮でステージ1を指定
+            await startBattleUseCase.Execute(selectedStageId);
         }
 
         /// <summary>

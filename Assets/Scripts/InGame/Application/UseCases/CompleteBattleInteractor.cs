@@ -9,6 +9,7 @@ namespace InGame.Application.UseCases
     using InGame.Domain.Models;
     using InGame.Domain.Services;
     using InGame.Domain.Repositories;
+    using Common.Domain.Services;
 
     /// <summary>
     /// バトル完了ユースケース
@@ -19,6 +20,7 @@ namespace InGame.Application.UseCases
         private readonly IPlayerRepository playerRepository;
         private readonly IBattleOutputPort outputPort;
         private readonly IRewardOutputPort rewardOutputPort;
+        private readonly ISceneLoaderService sceneLoader;
 
         private BattleContext battleContext;
 
@@ -27,12 +29,14 @@ namespace InGame.Application.UseCases
             IRewardCalculator rewardCalculator,
             IPlayerRepository playerRepository,
             IBattleOutputPort outputPort,
-            IRewardOutputPort rewardOutputPort)
+            IRewardOutputPort rewardOutputPort,
+            ISceneLoaderService sceneLoader)
         {
             this.rewardCalculator = rewardCalculator;
             this.playerRepository = playerRepository;
             this.outputPort = outputPort;
             this.rewardOutputPort = rewardOutputPort;
+            this.sceneLoader = sceneLoader;
         }
 
         public void SetBattleContext(BattleContext context)
@@ -83,6 +87,10 @@ namespace InGame.Application.UseCases
                 battleContext.Player.AddExperience(battleContext.TotalReward.Experience);
                 await playerRepository.SavePlayer(battleContext.Player);
             }
+
+            // OutGameシーンへ復帰
+            Debug.Log("[CompleteBattleInteractor] Returning to OutGame...");
+            await sceneLoader.LoadOutGameSceneAsync();
         }
     }
 }
