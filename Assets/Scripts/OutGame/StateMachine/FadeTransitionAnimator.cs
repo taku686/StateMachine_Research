@@ -1,4 +1,5 @@
 using System;
+using Common.Constants;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using OutGame.Infrastructure.Factories;
@@ -25,7 +26,7 @@ namespace OutGame.StateMachine
         public FadeTransitionAnimator(
             IViewFactory<LoadingView> loadingViewFactory,
             AddressableViewFactory<LoadingView> addressableFactory,
-            [InjectOptional] float fadeDuration = 0.3f)
+            [InjectOptional] float fadeDuration = AppConstants.Animation.DefaultFadeDuration)
         {
             _loadingViewFactory = loadingViewFactory;
             _addressableFactory = addressableFactory;

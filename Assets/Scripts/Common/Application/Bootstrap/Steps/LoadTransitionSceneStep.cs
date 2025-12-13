@@ -14,10 +14,10 @@ namespace Common.Application.Bootstrap.Steps
         public async UniTask ExecuteAsync()
         {
             Debug.Log($"[Bootstrap] Loading {TRANSITION_SCENE_NAME} scene...");
-            
+
             var operation = SceneManager.LoadSceneAsync(TRANSITION_SCENE_NAME, LoadSceneMode.Additive);
             await operation;
-            
+
             Debug.Log($"[Bootstrap] {TRANSITION_SCENE_NAME} scene loaded");
         }
     }

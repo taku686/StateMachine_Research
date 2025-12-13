@@ -13,23 +13,23 @@ namespace Common.Application.Bootstrap.Steps
     {
         private const string FIRST_SCENE_NAME = "OutGame";
 
-        private readonly ISceneTransitionOrchestrator orchestrator;
+        private readonly IInitialSceneSetter initialSceneSetter;
 
         [Inject]
-        public LoadFirstGameSceneStep(ISceneTransitionOrchestrator orchestrator)
+        public LoadFirstGameSceneStep(IInitialSceneSetter initialSceneSetter)
         {
-            this.orchestrator = orchestrator;
+            this.initialSceneSetter = initialSceneSetter;
         }
 
         public async UniTask ExecuteAsync()
         {
             Debug.Log($"[Bootstrap] Loading {FIRST_SCENE_NAME} scene...");
-            
+
             var operation = SceneManager.LoadSceneAsync(FIRST_SCENE_NAME, LoadSceneMode.Additive);
             await operation;
 
             // TransitionOrchestratorに初期シーンを設定
-            orchestrator.SetInitialScene(FIRST_SCENE_NAME);
+            initialSceneSetter.SetInitialScene(FIRST_SCENE_NAME);
 
             // アクティブシーンに設定
             var firstScene = SceneManager.GetSceneByName(FIRST_SCENE_NAME);

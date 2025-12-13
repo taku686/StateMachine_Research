@@ -1,3 +1,4 @@
+using InGame.Constants;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
@@ -15,7 +16,7 @@ namespace InGame.Presentation.Views
         [SerializeField] private Gradient colorGradient;
 
         [Header("設定")]
-        [SerializeField] private float animationDuration = 0.3f;
+        [SerializeField] private float animationDuration = InGameConstants.UI.HealthBarAnimationDuration;
         [SerializeField] private bool useGradient = true;
 
         private void Awake()
@@ -36,9 +37,9 @@ namespace InGame.Presentation.Views
             {
                 colorGradient = new Gradient();
                 var colorKeys = new GradientColorKey[3];
-                colorKeys[0] = new GradientColorKey(Color.red, 0f);
-                colorKeys[1] = new GradientColorKey(Color.yellow, 0.5f);
-                colorKeys[2] = new GradientColorKey(Color.green, 1f);
+                colorKeys[0] = new GradientColorKey(Color.red, InGameConstants.UI.HealthBarGradientLowThreshold);
+                colorKeys[1] = new GradientColorKey(Color.yellow, InGameConstants.UI.HealthBarGradientMidThreshold);
+                colorKeys[2] = new GradientColorKey(Color.green, InGameConstants.UI.HealthBarGradientHighThreshold);
 
                 var alphaKeys = new GradientAlphaKey[2];
                 alphaKeys[0] = new GradientAlphaKey(1f, 0f);

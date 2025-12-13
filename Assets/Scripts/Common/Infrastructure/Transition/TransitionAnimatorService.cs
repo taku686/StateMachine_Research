@@ -1,3 +1,4 @@
+using Common.Constants;
 using Common.Domain.Services;
 using OutGame.Infrastructure.Views;
 using Cysharp.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Common.Infrastructure.Transition
 
         public class Settings
         {
-            public float DefaultFadeDuration = 0.3f;
+            public float DefaultFadeDuration = AppConstants.Animation.DefaultFadeDuration;
         }
 
         [Inject]
@@ -25,7 +26,7 @@ namespace Common.Infrastructure.Transition
             [InjectOptional] Settings settings = null)
         {
             this.loadingView = loadingView;
-            this.defaultFadeDuration = settings?.DefaultFadeDuration ?? 0.3f;
+            this.defaultFadeDuration = settings?.DefaultFadeDuration ?? AppConstants.Animation.DefaultFadeDuration;
         }
 
         public async UniTask FadeInAsync(float duration)

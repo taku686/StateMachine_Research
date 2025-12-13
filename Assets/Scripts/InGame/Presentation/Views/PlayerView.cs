@@ -1,3 +1,4 @@
+using InGame.Constants;
 using UnityEngine;
 
 namespace InGame.Presentation.Views
@@ -34,7 +35,7 @@ namespace InGame.Presentation.Views
             {
                 var anchorObj = new GameObject("HealthBarAnchor");
                 anchorObj.transform.SetParent(transform);
-                anchorObj.transform.localPosition = new Vector3(0, 1.5f, 0);
+                anchorObj.transform.localPosition = new Vector3(0, InGameConstants.UI.HealthBarAnchorHeight, 0);
                 healthBarAnchor = anchorObj.transform;
             }
         }

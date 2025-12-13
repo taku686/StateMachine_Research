@@ -15,10 +15,5 @@ namespace Common.Domain.Services
         /// <param name="targetSceneName">遷移先のシーン名</param>
         /// <param name="onProgress">進捗コールバック (0.0 - 1.0)</param>
         UniTask TransitionToSceneAsync(string targetSceneName, Action<float> onProgress = null);
-
-        /// <summary>
-        /// 初期シーンを設定（Bootstrap時に使用）
-        /// </summary>
-        void SetInitialScene(string sceneName);
     }
 }

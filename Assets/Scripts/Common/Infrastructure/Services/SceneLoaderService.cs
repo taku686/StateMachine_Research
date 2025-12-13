@@ -23,7 +23,7 @@ namespace Common.Infrastructure.Services
         }
 
         public async UniTask TransitionToSceneAsync(
-            string sceneName, 
+            string sceneName,
             Action<float> onProgress = null)
         {
             await orchestrator.TransitionToSceneAsync(sceneName, onProgress);

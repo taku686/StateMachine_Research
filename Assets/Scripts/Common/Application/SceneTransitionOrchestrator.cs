@@ -1,4 +1,5 @@
 using System;
+using Common.Constants;
 using Common.Domain.Services;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace Common.Application
     /// - 各サービスの連携
     /// - 状態管理（現在のシーン、遷移中フラグ）
     /// </summary>
-    public class SceneTransitionOrchestrator : ISceneTransitionOrchestrator
+    public class SceneTransitionOrchestrator : ISceneTransitionOrchestrator, IInitialSceneSetter
     {
         private readonly ITransitionAnimator animator;
         private readonly ISceneLoadService sceneLoader;
@@ -37,7 +38,7 @@ namespace Common.Application
         }
 
         public async UniTask TransitionToSceneAsync(
-            string targetSceneName, 
+            string targetSceneName,
             Action<float> onProgress = null)
         {
             if (_isTransitioning)
@@ -54,7 +55,7 @@ namespace Common.Application
 
                 // Phase 1: フェードイン（画面を暗くする）
                 Debug.Log("[Phase 1] Fade In");
-                await animator.FadeInAsync(0.3f);
+                await animator.FadeInAsync(AppConstants.Animation.DefaultFadeDuration);
 
                 // Phase 2: ローディング表示
                 Debug.Log("[Phase 2] Show Loading");
@@ -63,7 +64,7 @@ namespace Common.Application
                 // Phase 3: 次シーンをAdditive読み込み
                 Debug.Log($"[Phase 3] Loading scene: {targetSceneName}");
                 var newScene = await sceneLoader.LoadSceneAdditiveAsync(
-                    targetSceneName, 
+                    targetSceneName,
                     progress =>
                     {
                         animator.SetProgress(progress);
@@ -96,18 +97,18 @@ namespace Common.Application
 
                 // Phase 7: フェードアウト（画面を明るくする）
                 Debug.Log("[Phase 7] Fade Out");
-                await animator.FadeOutAsync(0.3f);
+                await animator.FadeOutAsync(AppConstants.Animation.DefaultFadeDuration);
 
                 Debug.Log($"[SceneTransitionOrchestrator] === Transition complete: {targetSceneName} ===");
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[SceneTransitionOrchestrator] Transition failed: {ex.Message}\n{ex.StackTrace}");
-                
+
                 // エラー時はローディングを非表示にする
                 animator.HideLoading();
-                await animator.FadeOutAsync(0.3f);
-                
+                await animator.FadeOutAsync(AppConstants.Animation.DefaultFadeDuration);
+
                 throw;
             }
             finally

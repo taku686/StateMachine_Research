@@ -1,3 +1,5 @@
+using OutGame.Constants;
+
 namespace OutGame.Domain.Models
 {
     /// <summary>
@@ -10,7 +12,7 @@ namespace OutGame.Domain.Models
         public float SeVolume { get; private set; }
         public bool HasAdjustedVolumeOnce { get; private set; }
 
-        public AudioSettings(float bgmVolume = 0.8f, float seVolume = 0.8f, bool hasAdjustedVolumeOnce = false)
+        public AudioSettings(float bgmVolume = OutGameConstants.Audio.DefaultBgmVolume, float seVolume = OutGameConstants.Audio.DefaultSeVolume, bool hasAdjustedVolumeOnce = false)
         {
             BgmVolume = bgmVolume;
             SeVolume = seVolume;

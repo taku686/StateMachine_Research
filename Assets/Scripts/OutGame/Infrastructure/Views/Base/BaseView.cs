@@ -1,4 +1,5 @@
 using System;
+using Common.Constants;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using DG.Tweening;
@@ -11,7 +12,7 @@ namespace OutGame.Infrastructure.Views
     public abstract class BaseView : MonoBehaviour, IView
     {
         [SerializeField] private CanvasGroup _canvasGroup;
-        [SerializeField] private float _fadeDuration = 0.3f;
+        [SerializeField] private float _fadeDuration = AppConstants.Animation.DefaultFadeDuration;
 
         protected virtual void Awake()
         {

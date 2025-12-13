@@ -1,3 +1,4 @@
+using InGame.Constants;
 using UnityEngine;
 
 namespace InGame.Domain.Services
@@ -9,8 +10,6 @@ namespace InGame.Domain.Services
     /// </summary>
     public class DamageCalculator : IDamageCalculator
     {
-        private const float CriticalMultiplier = 1.5f;
-
         /// <summary>
         /// ダメージを計算
         /// </summary>
@@ -20,12 +19,12 @@ namespace InGame.Domain.Services
             int baseDamage = attacker.Stats.AttackPower - defender.Stats.Defense;
 
             // 最低1ダメージは保証
-            baseDamage = Mathf.Max(1, baseDamage);
+            baseDamage = Mathf.Max(InGameConstants.Combat.MinDamage, baseDamage);
 
             // クリティカル判定
             if (IsCriticalHit(attacker))
             {
-                baseDamage = (int)(baseDamage * CriticalMultiplier);
+                baseDamage = (int)(baseDamage * InGameConstants.Combat.CriticalMultiplier);
             }
 
             return baseDamage;

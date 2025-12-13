@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using InGame.Constants;
 using Zenject;
 
 namespace InGame.Infrastructure.Repositories
@@ -60,13 +61,13 @@ namespace InGame.Infrastructure.Repositories
         private CombatStats CalculateBaseStats(int level)
         {
             return new CombatStats(
-                maxHp: 100 + (level * 10),
-                currentHp: 100 + (level * 10),
-                attackPower: 10 + (level * 2),
-                defense: 5 + level,
-                attackSpeed: 1f,
-                moveSpeed: 3f,
-                criticalRate: 0.1f
+                maxHp: InGameConstants.Player.BaseHp + (level * InGameConstants.Player.HpPerLevel),
+                currentHp: InGameConstants.Player.BaseHp + (level * InGameConstants.Player.HpPerLevel),
+                attackPower: InGameConstants.Player.BaseAttackPower + (level * InGameConstants.Player.AttackPowerPerLevel),
+                defense: InGameConstants.Player.BaseDefense + level * InGameConstants.Player.DefensePerLevel,
+                attackSpeed: InGameConstants.Player.DefaultAttackSpeed,
+                moveSpeed: InGameConstants.Player.DefaultMoveSpeed,
+                criticalRate: InGameConstants.Combat.DefaultCriticalRate
             );
         }
 

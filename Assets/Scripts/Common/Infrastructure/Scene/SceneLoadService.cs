@@ -1,4 +1,5 @@
 using System;
+using Common.Constants;
 using Common.Domain.Services;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -12,13 +13,13 @@ namespace Common.Infrastructure.Scene
     public class SceneLoadService : ISceneLoadService
     {
         public async UniTask<UnityEngine.SceneManagement.Scene> LoadSceneAdditiveAsync(
-            string sceneName, 
+            string sceneName,
             Action<float> onProgress = null)
         {
             Debug.Log($"[SceneLoadService] Loading scene: {sceneName}");
 
             var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-            
+
             if (operation == null)
             {
                 Debug.LogError($"[SceneLoadService] Failed to start loading scene: {sceneName}");
@@ -31,17 +32,17 @@ namespace Common.Infrastructure.Scene
             while (!operation.isDone)
             {
                 // 進捗を0.0～0.9に正規化
-                float progress = Mathf.Clamp01(operation.progress / 0.9f);
+                float progress = Mathf.Clamp01(operation.progress / AppConstants.Scene.LoadProgressThreshold);
                 onProgress?.Invoke(progress);
 
                 // 90%に達したら手動で最後の10%を進める
-                if (operation.progress >= 0.9f)
+                if (operation.progress >= AppConstants.Scene.LoadProgressThreshold)
                 {
                     // 最後の10%を手動で進める（演出用）
-                    for (float t = 0.9f; t <= 1.0f; t += 0.01f)
+                    for (float t = AppConstants.Scene.LoadProgressThreshold; t <= AppConstants.Progress.Max; t += AppConstants.Scene.LoadProgressIncrement)
                     {
                         onProgress?.Invoke(t);
-                        await UniTask.Delay(16); // 約60fps
+                        await UniTask.Delay(AppConstants.Scene.LoadProgressUpdateInterval); // 約60fps
                     }
 
                     operation.allowSceneActivation = true;

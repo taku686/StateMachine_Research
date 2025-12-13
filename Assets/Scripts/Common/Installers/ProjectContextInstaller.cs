@@ -31,9 +31,17 @@ namespace Common.Installers
             // ===== LoadingView =====
             // Transitionシーンから取得
             Container.Bind<LoadingView>()
-                .FromComponentInHierarchy()
+                .FromMethod(ctx =>
+                {
+                    var loadingView = FindFirstObjectByType<LoadingView>();
+                    if (loadingView == null)
+                    {
+                        Debug.LogError("[ProjectContextInstaller] LoadingView not found in hierarchy! Make sure Transition scene is loaded.");
+                    }
+                    return loadingView;
+                })
                 .AsSingle()
-                .Lazy(); // Transitionシーンロード後に解決
+                .Lazy();
 
             // ===== サービス層 =====
             Container.Bind<ITransitionAnimator>()
@@ -50,7 +58,8 @@ namespace Common.Installers
                 .AsSingle();
 
             // ===== オーケストレーター =====
-            Container.Bind<ISceneTransitionOrchestrator>()
+            // SceneTransitionOrchestratorを両方のインターフェースにバインド
+            Container.Bind(new[] { typeof(ISceneTransitionOrchestrator), typeof(IInitialSceneSetter) })
                 .To<SceneTransitionOrchestrator>()
                 .AsSingle();
 
@@ -58,7 +67,7 @@ namespace Common.Installers
             Container.Bind<ISceneLoaderService>()
                 .To<SceneLoaderService>()
                 .AsSingle()
-                .NonLazy(); // 起動時に初期化
+                .Lazy(); // Transitionシーンロード後に初期化されるように変更
 
             Debug.Log("[ProjectContextInstaller] Bindings completed");
         }

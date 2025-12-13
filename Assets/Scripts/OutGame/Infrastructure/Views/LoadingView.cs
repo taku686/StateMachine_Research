@@ -1,4 +1,5 @@
 using System.Threading;
+using Common.Constants;
 using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace OutGame.Infrastructure.Views
         [Header("スピナー（フレームアニメーション）")]
         [SerializeField] private Image _spinnerImage;
         [SerializeField] private Sprite[] _spinnerFrames;
-        [SerializeField] private float _frameRate = 12f; // フレーム/秒
+        [SerializeField] private float _frameRate = AppConstants.Animation.DefaultSpinnerFrameRate; // フレーム/秒
 
         private bool _isSpinning;
         private CancellationTokenSource _spinnerCts;
@@ -115,7 +116,7 @@ namespace OutGame.Infrastructure.Views
             // プログレスバーを初期化
             if (_progressBar != null)
             {
-                _progressBar.value = 0f;
+                _progressBar.value = AppConstants.Progress.Min;
             }
 
             // スピナー回転開始
